@@ -19,5 +19,5 @@ var user = {
 	password: 'test'
 };
 
-model.forge().signup(user, handler);
+model.forge().authenticate(user, handler);
 
