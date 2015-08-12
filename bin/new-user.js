@@ -16,6 +16,8 @@ function handler(err, result){
 
 var user = {
 	email: 'test@test.com',
+	firstName: 'test'
+	lastName: 'test'
 	password: 'test'
 };
 

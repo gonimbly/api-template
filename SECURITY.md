@@ -8,17 +8,19 @@ JSON Web Token is comprised of 3 components. Your header (encryption & type), pa
 Every time a user makes a request to your API, included is a JWT. The JWT is checked against Redis and the request is processed if valid. It's pretty simple.
 
 ####Setup
-First step is comparing username / password with a bcrypt'd verions of the same hash.
+######√First step is comparing username / password with a bcrypt'd verions of the same hash.
 
-Next step is storing your email / password in Postres with bcrypt.
+######√Next step is storing your email / password in Postres with bcrypt.
 
-Next step is to setup your node/express server to return a JWT when a user is authenticated.
+######√Next step is to setup your node/express server to return a JWT when a user is authenticated.
+Going with `jwt-simple` for now just to get the hang of the flow and to easily write tokens to a store soon. I'm really appreciating the use of `bin` scripts while writing the API. It helps testing and they'll probably be very useful at some point. At least for provisioning access.
 
-Next step is having access check method as middleware for a get projects route.
+######Next step is having access check method as middleware for a get projects route.
 
-Next step is to store that token in Redis.
+######Next step is to store that token in Redis.
 
-Next step is to setup middleware to validate against Redis before processing API requests.
+######Next step is to setup middleware to validate against Redis before processing API requests.
 
 ##Useful Links
 http://jwt.io/
+https://github.com/dwyl/learn-json-web-tokens
