@@ -1,7 +1,8 @@
 'use strict';
 
 exports.login = function(req, res) {
-	console.log(req.body);
+
+	console.log(bcrypt);
 	//do login things
 	res.json({near:'here'});
 };
