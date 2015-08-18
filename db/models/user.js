@@ -1,6 +1,7 @@
 'use strict';
 
-var bcrypt = require('bcrypt');
+var Bromise = require('bluebird');
+var bcrypt = Bromise.promisifyAll(require('bcrypt'));
 var bookshelf = require('bookshelf')(require('../knexpg'));
 var validator = require('validator');
 var token = require('./token');
@@ -16,37 +17,39 @@ var model = bookshelf.Model.extend({
 	 * @param {string} options.password, String for user field.
 	 * @returns {Function} 'Ok'
 	 */
-	authenticate: function (options, callback) {
-		var invalidCredentials = 'Invalide username or password';
+	authenticate: function (options) {
+		var invalidCredentials = 'Invalid username or password';
 		if (!validator.isEmail(options.email)) {
-			return callback(new Error('Invalid email address'));
+			return new Error('Invalid email address');
 		}
 		if (!validator.isLength(options.password, 4)) {
-			return callback(new Error('Password must be at least 4 characters'));
+			return new Error('Password must be at least 4 characters');
 		}
 
-		model.forge({email: options.email})
-		.fetch()
-		.then(function (user) {
-			if(!user) {
-				return callback(new Error(invalidCredentials));
-			}
-			this.comparePassword(options.password, user.get('password'), function (err, match) {
-				if (err) return callback(err);
-				if (match) {
-					token.forge()
-						.createAccessToken(user.toJSON())
-						.then(function(token) {
-							return callback(null, {'user':{'email': user.get('email'), 'firstName': user.get('firstName'), 'lastName': user.get('lastName')}, 'token': token});
-						})
-						.catch(function(err) {
-							return callback(err);    
+		return Bromise.resolve().then(function(){
+			return model.forge({email: options.email})
+				.fetch()
+				.then(function (user) {
+					if(!user) {
+						return new Error(invalidCredentials);
+					}
+					return this.comparePassword(options.password, user.get('password'))
+						.then(function (match) {
+							// if (err) return callback(err);
+							if (match) {
+								return token.forge()
+									.createAccessToken(user.toJSON())
+									.then(function(token) {
+										return{'user':{'email': user.get('email'), 'firstName': user.get('firstName'), 'lastName': user.get('lastName')}, 'token': token};
+									});
+							} else {
+								// Passwords don't match
+								return new Error(invalidCredentials);
+							}
+						}, 	function(err){
+							return err;
 						});
-				} else {
-					// Passwords don't match
-					return callback(null, invalidCredentials);
-				}
-			});
+				});
 		});
 	},
 
@@ -54,32 +57,30 @@ var model = bookshelf.Model.extend({
 	 * Compare clear with hashed password
 	 * @param password
 	 * @param hash
-	 * @param callback
 	 */
-	comparePassword: function (password, hash, callback) {
-		console.log('password',password);
-		console.log('hash',hash);
-		bcrypt.compare(password, hash, function (err, match) {
-			if (err) {
-				return callback(err);
-			}
-			return callback(null, match);
+	comparePassword: function (password, hash) {
+		return Bromise.resolve().then(function(){
+			return bcrypt.compareAsync(password, hash)
+				.then(function (match) {
+					return match;
+				}, function(error){
+					return error;
+				});
 		});
 	},
 
 	/**
 	 * Encrypt password with per-user salt
 	 * @param password
-	 * @param callback
 	 */
-	encryptPassword: function (password, callback) {
-		bcrypt.genSalt(10, function (err, salt) {
-			if (err) {
-				return callback(err);
-			}
-			bcrypt.hash(password, salt, function (err, hash) {
-				return callback(err, hash);
-			});
+	encryptPassword: function (password) {
+		return Bromise.resolve().then(function(){
+			return bcrypt.genSaltAsync(10)
+				.then(function (salt) {
+					return bcrypt.hashAsync(password, salt);
+				}, function(err){
+					return err;
+				});
 		});
 	},
 
@@ -92,43 +93,44 @@ var model = bookshelf.Model.extend({
 	 * @param {string} options.password, String for user field.
 	 * @returns {Function} 'Ok'
 	 */
-	signup: function (options, callback) {
+	signup: function (options) {
 		if (!validator.isEmail(options.email)) {
-			return callback(new Error('Invalid email address'));
+			return new Error('Invalid email address');
 		}
 		if (!validator.isLength(options.firstName, 1) || !validator.isAlphanumeric(options.firstName)) {
-			return callback(new Error('First name must be at least one character'));
+			return new Error('First name must be at least one character');
 		}
 		if (!validator.isLength(options.lastName, 1) || !validator.isAlphanumeric(options.lastName)) {
-			return callback(new Error('Last name must be at least one character'));
+			return new Error('Last name must be at least one character');
 		}
 		if (!validator.isLength(options.password, 4)) {
-			return callback(new Error('Password must be at least 4 characters'));
+			return new Error('Password must be at least 4 characters');
 		}
 
-		model.forge({email: options.email})
-			.fetch()
-			.then(function (user) {
-				if(user) {
-					return callback(new Error('Email address already registered'));
-				}
-				this.encryptPassword(options.password, function (err, hash) {
-					if (err) return callback(err);
-					var newModel = {
-						email: options.email,
-						firstName: options.firstName,
-						lastName: options.lastName,
-						password: hash
-					};
-					model.forge(newModel)
-					.save()
-					.then(function () {
-						return callback(null,'OK');
-					})
-					.catch(callback);
+
+		return Bromise.resolve().then(function(){
+			return model.forge({email: options.email})
+				.fetch()
+				.then(function (user) {
+					if(user) {
+						return new Error('Email address already registered');
+					}
+					this.encryptPassword(options.password)
+					.then(function (hash) {
+						var newModel = {
+							email: options.email,
+							firstName: options.firstName,
+							lastName: options.lastName,
+							password: hash
+						};
+						return model.forge(newModel)
+							.save()
+							.then(function () {
+								return 'OK';
+							});
+					});
 				});
-			})
-			.catch(callback);
+		});
 	}
 });
 module.exports = model;
