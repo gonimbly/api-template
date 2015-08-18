@@ -5,14 +5,13 @@ var bookshelf = require('bookshelf')(knexpg);
 var Bromise = require('bluebird');
 var jwt = require('jwt-simple');
 var moment = require('moment');
+var redisClient = require('../redis');
 
 var model = bookshelf.Model.extend({
 	tableName: 'tokens',
 	hasTimestamps: true,
 
 	createAccessToken: function (user){
-		
-		//JWT stuff here
 		return Bromise.resolve()
 			.then(function(){
 				var expires = moment().add(1, 'days').valueOf();
@@ -21,6 +20,13 @@ var model = bookshelf.Model.extend({
 					exp: expires
 					}, 'royunderhill');
 
+				return token;
+			});
+	},
+	writeAccessToken: function (token, user){
+		var TIME_TO_LIVE = 60*60*24; //24 hours
+		return redisClient.setexAsync(token, TIME_TO_LIVE, JSON.stringify(user))
+			.then(function(){
 				return token;
 			});
 	}

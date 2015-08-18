@@ -18,8 +18,12 @@ Going with `jwt-simple` for now just to get the hang of the flow and to easily w
 ######Next step is having access check method as middleware for a get projects route.
 
 ######Next step is to store that token in Redis.
+Why waste time and write tokens to DB. Let's skip straight to free Heroku Redis addon. `heroku addons:create heroku-redis:hobby-dev`
 
 ######Next step is to setup middleware to validate against Redis before processing API requests.
+
+######Using SSL (https)
+Can create a self-signed certificate for non-production application such as engaged. If it is production, purchase an SSL cert from an approved vendor.
 
 ##Useful Links
 http://jwt.io/
