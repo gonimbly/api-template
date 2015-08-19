@@ -10,12 +10,13 @@ exports.signup = function(req, res) {
 		.then(function(){
 			return User.forge()
 				.signup(req.body)
-				.then(function (thing) {
-					console.log('thing',thing);
-					res.send(200);
+				.then(function (model) {
+					console.log('model',model);
+					res.status(200).send(model);
 				});
 		})
 		.catch(function(err){
+			console.log('err',err);
 			res.status(400).send({error:err.message});
 		});
 };
@@ -33,17 +34,18 @@ exports.login = function(req, res) {
 		.fetch()
 		.then(function (user) {
 			if(!user){
-				return res.send(401, invalidCredentials);			
+				throw new Error(invalidCredentials);			
 			}
-			return Token.forge().createAccessToken(user)
-				.then(function (token) {
-					return Token.forge().writeAccessToken(token, user);
-				});
+			return user;
+		})
+		.then(function (user) {
+			return createAndWriteAccessToken(user);
 		})
 		.then(function (token) {
 			res.send(token);
 		})
 		.catch(function(err){
+			console.log('err',err);
 			res.status(400).send({error:err.message});
 		});
 };

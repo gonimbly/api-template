@@ -4,7 +4,7 @@ var Bromise = require('bluebird');
 var bcrypt = Bromise.promisifyAll(require('bcrypt'));
 var bookshelf = require('bookshelf')(require('../knexpg'));
 var validator = require('validator');
-var token = require('./token');
+var Token = require('./token');
 
 var model = bookshelf.Model.extend({
 	tableName: 'users',
@@ -114,20 +114,20 @@ var model = bookshelf.Model.extend({
 					if(user) {
 						throw new Error('Email address already registered');
 					}
-					this.encryptPassword(options.password)
-					.then(function (hash) {
-						var newModel = {
-							email: options.email,
-							firstName: options.firstName,
-							lastName: options.lastName,
-							password: hash
-						};
-						return model.forge(newModel)
-							.save()
-							.then(function () {
-								return 'OK';
-							});
-					});
+					return this.encryptPassword(options.password)
+						.then(function (hash) {
+							var newUser = {
+								email: options.email,
+								firstName: options.firstName,
+								lastName: options.lastName,
+								password: hash
+							};
+							return model.forge(newUser).save();
+						})
+						.then(function (newUser) {
+							return Token.forge().createAndWriteAccessToken(newUser);
+						});
+						
 				});
 		});
 	}

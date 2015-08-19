@@ -11,6 +11,7 @@ exports.get = function(req, res) {
 				res.json(models);
 			})
 			.catch(function(err){
+				console.log('err',err);
 				res.status(400).send({error:err.message});
 			});
 };

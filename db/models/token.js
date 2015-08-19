@@ -29,6 +29,15 @@ var model = bookshelf.Model.extend({
 			.then(function(){
 				return token;
 			});
+	},
+	createAndWriteAccessToken: function(user){
+		return Bromise.resolve().then(function(){
+			return this.createAccessToken(user)
+				.then(function (token) {
+					return this.writeAccessToken(token, user);
+				}.bind(this));
+		}.bind(this));
 	}
+	
 });
 module.exports = model;
