@@ -20,10 +20,10 @@ var model = bookshelf.Model.extend({
 	authenticate: function (options) {
 		var invalidCredentials = 'Invalid username or password';
 		if (!validator.isEmail(options.email)) {
-			return new Error('Invalid email address');
+			throw new Error('Invalid email address');
 		}
 		if (!validator.isLength(options.password, 4)) {
-			return new Error('Password must be at least 4 characters');
+			throw new Error('Password must be at least 4 characters');
 		}
 
 		return Bromise.resolve().then(function(){
@@ -31,7 +31,7 @@ var model = bookshelf.Model.extend({
 				.fetch()
 				.then(function (user) {
 					if(!user) {
-						return new Error(invalidCredentials);
+						throw new Error(invalidCredentials);
 					}
 					return this.comparePassword(options.password, user.get('password'))
 						.then(function (match) {
@@ -44,7 +44,7 @@ var model = bookshelf.Model.extend({
 									});
 							} else {
 								// Passwords don't match
-								return new Error(invalidCredentials);
+								throw new Error(invalidCredentials);
 							}
 						}, 	function(err){
 							return err;
@@ -95,25 +95,24 @@ var model = bookshelf.Model.extend({
 	 */
 	signup: function (options) {
 		if (!validator.isEmail(options.email)) {
-			return new Error('Invalid email address');
+			throw new Error('Invalid email address');
 		}
 		if (!validator.isLength(options.firstName, 1) || !validator.isAlphanumeric(options.firstName)) {
-			return new Error('First name must be at least one character');
+			throw new Error('First name must be at least one character');
 		}
 		if (!validator.isLength(options.lastName, 1) || !validator.isAlphanumeric(options.lastName)) {
-			return new Error('Last name must be at least one character');
+			throw new Error('Last name must be at least one character');
 		}
 		if (!validator.isLength(options.password, 4)) {
-			return new Error('Password must be at least 4 characters');
+			throw new Error('Password must be at least 4 characters');
 		}
-
 
 		return Bromise.resolve().then(function(){
 			return model.forge({email: options.email})
 				.fetch()
 				.then(function (user) {
 					if(user) {
-						return new Error('Email address already registered');
+						throw new Error('Email address already registered');
 					}
 					this.encryptPassword(options.password)
 					.then(function (hash) {
